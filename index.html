@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Circus - Escape the Confinement</title>
+    <title>The Circus - Escape the Toxic System</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
     <style>
         body {
             margin: 0;
             padding: 0;
-            background-color: #040814; /* Das vertraute edle Dunkelblau */
+            background-color: #040814;
             overflow: hidden;
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             user-select: none;
         }
         
-        /* Dezente Anleitung oben */
         .instructions {
             position: absolute;
             top: 5%;
@@ -40,7 +39,7 @@
         }
 
         .highlight {
-            color: #ffb703; /* Warmes Orange/Gold */
+            color: #ffb703;
             font-weight: bold;
         }
     </style>
@@ -49,22 +48,23 @@
 
 <div class="instructions">
     <span class="game-title">The Circus</span>
-    The system is trapped in chaotic confinement.<br>
-    <span class="highlight">CLICK ON A MONKEY</span> to release them from the tent into freedom.
+    Die Affen sind in der Manege gefangen.<br>
+    <span class="highlight">KLICKE AUF EINEN AFFEN</span>, um ihn zu befreien, damit er frei und happy ist!
 </div>
 
 <script>
 let monkeys = [];
 let totalMonkeys = 12; 
-let cageRadius = 180;
+let cageRadius = 160; // Etwas kleiner, damit außen mehr Platz für die Zuschauer ist
 let cageX, cageY;
 let gameWon = false;
 let particles = [];
+let escapedCount = 0;
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
     cageX = width / 2;
-    cageY = height * 0.58;
+    cageY = height * 0.55;
     resetGame();
 }
 
@@ -72,35 +72,45 @@ function resetGame() {
     monkeys = [];
     gameWon = false;
     particles = [];
+    escapedCount = 0;
     
     for (let i = 0; i < totalMonkeys; i++) {
         let angle = random(TWO_PI);
-        let r = random(0, cageRadius - 30);
+        let r = random(0, cageRadius - 35);
         monkeys.push({
             x: cageX + cos(angle) * r,
             y: cageY + sin(angle) * r,
-            vx: random(-2.5, 2.5),
-            vy: random(-2.5, 2.5),
-            size: 22, 
+            vx: random(-2, 2),
+            vy: random(-2, 2),
+            size: 24, 
             escaped: false,
-            bounceTimer: random(100)
+            bounceTimer: random(100),
+            audienceAngle: 0 // Wird zugewiesen, wenn er befreit wird
         });
     }
 }
 
 function draw() {
-    background(4, 8, 20, 40); 
+    background(4, 8, 20, 50); 
     
-    // 1. ZIRKUSZELT ZEICHNEN
-    drawCircusTent();
+    // 1. MANEGE (Minimalistischer Kreis ohne Dach)
+    fill(12, 18, 35, 150);
+    stroke(45, 60, 90, 180); 
+    strokeWeight(2);
+    ellipse(cageX, cageY, cageRadius * 2);
 
-    // 2. FREUDE-PARTIKEL (Konfetti)
+    // Feine innere Struktur
+    stroke(45, 60, 90, 40);
+    strokeWeight(1);
+    ellipse(cageX, cageY, cageRadius * 2 - 15);
+
+    // 2. KONFETTI-EFFEKTE (Sanfter Sprühregen bei Klick)
     for (let i = particles.length - 1; i >= 0; i--) {
         let p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.1; 
-        p.alpha -= 3;
+        p.vy += 0.08; 
+        p.alpha -= 4;
         
         push();
         fill(p.color[0], p.color[1], p.color[2], p.alpha);
@@ -113,145 +123,134 @@ function draw() {
         if (p.alpha <= 0) particles.splice(i, 1);
     }
 
-    // 3. AFFEN ANIMIEREN & ZEICHNEN
+    // 3. AFFEN ZEICHNEN & UPDATEN
     let activeMonkeys = 0;
     
     for (let m of monkeys) {
         if (!m.escaped) {
             activeMonkeys++;
             
+            // Bewegung in der Manege
             m.x += m.vx;
             m.y += m.vy;
             
+            // Abprallen am Manegenrand
             let d = dist(m.x, m.y, cageX, cageY);
-            if (d > cageRadius - m.size) {
+            if (d > cageRadius - m.size/2 - 5) {
                 let nx = (m.x - cageX) / d;
                 let ny = (m.y - cageY) / d;
                 let dot = m.vx * nx + m.vy * ny;
                 m.vx = m.vx - 2 * dot * nx;
                 m.vy = m.vy - 2 * dot * ny;
-                m.x = cageX + nx * (cageRadius - m.size - 1);
-                m.y = cageY + ny * (cageRadius - m.size - 1);
+                m.x = cageX + nx * (cageRadius - m.size/2 - 6);
+                m.y = cageY + ny * (cageRadius - m.size/2 - 6);
             }
             
+            // Trauriger Affe in der Manege
             drawMonkey(m.x, m.y, m.size, false, m.bounceTimer);
         } else {
-            m.x += m.vx * 1.6;
-            m.y += m.vy * 1.6;
+            // BEFREITER AFFE: Steht fest im Publikum außerhalb des Kreises
+            // Er kreist sanft um die Manege und hüpft glücklich auf und ab
+            let targetRadius = cageRadius + 45;
+            m.x = cageX + cos(m.audienceAngle) * targetRadius;
+            m.y = cageY + sin(m.audienceAngle) * targetRadius;
             
-            drawMonkey(m.x, m.y, m.size, true, m.bounceTimer);
-            
-            if (random(1) < 0.05 && dist(m.x, m.y, cageX, cageY) < width) {
-                createConfetti(m.x, m.y, 2);
-            }
+            // Glücklicher, hüpfender Affe draußen
+            drawMonkey(m.x, m.y, m.size, true, m.bounceTimer * 2); // Schnellerer Bounce = glücklicher
         }
-        m.bounceTimer += 0.15;
+        m.bounceTimer += 0.1;
     }
     
     if (activeMonkeys === 0 && !gameWon) {
         gameWon = true;
-        createConfetti(width / 2, height / 2, 100); 
+        createConfetti(width / 2, height / 2, 120); 
     }
 
-    // 4. VISIER / SIEG
+    // 4. INTERFACE
     if (!gameWon) {
         noFill();
-        stroke(255, 183, 3, 150);
+        stroke(255, 183, 3, 120);
         strokeWeight(1.5);
-        ellipse(mouseX, mouseY, 30);
-        ellipse(mouseX, mouseY, 6);
+        ellipse(mouseX, mouseY, 25);
     } else {
         push();
         textAlign(CENTER, CENTER);
         fill(255, 183, 3);
         textSize(24);
-        text("CIRCUS EMPTY. FREEDOM RESTORED! 🎉🐒", width / 2, height * 0.55);
+        text("ALLE AFFEN SIND FREI! 🎉🐒", width / 2, height * 0.55);
         textSize(14);
         fill(92, 105, 122);
-        text("Click anywhere to close the loop and restart.", width / 2, height * 0.60);
+        text("Klicke irgendwo hin, um das Spiel neuzustarten.", width / 2, height * 0.60);
         pop();
     }
-}
-
-function drawCircusTent() {
-    push();
-    fill(18, 24, 41, 120);
-    stroke(230, 50, 50, 100); 
-    strokeWeight(3);
-    ellipse(cageX, cageY, cageRadius * 2);
-
-    let roofTopY = cageY - cageRadius - 40;
-    noStroke();
-    
-    for (let i = -cageRadius; i < cageRadius; i += 40) {
-        if ((i / 40) % 2 === 0) {
-            fill(230, 50, 50); 
-        } else {
-            fill(245, 245, 245); 
-        }
-        triangle(cageX, roofTopY, cageX + i, cageY - cageRadius + 10, cageX + i + 40, cageY - cageRadius + 10);
-    }
-    
-    fill(255, 183, 3);
-    triangle(cageX, roofTopY, cageX + 15, roofTopY + 5, cageX, roofTopY + 10);
-    stroke(255, 183, 3);
-    strokeWeight(2);
-    line(cageX, roofTopY, cageX, roofTopY + 15);
-    pop();
 }
 
 function drawMonkey(x, y, size, isHappy, timer) {
     push();
     translate(x, y);
     
-    let bounce = sin(timer) * 2;
-    rotate(sin(timer * 0.5) * 0.1);
-
-    let bodyColor = isHappy ? color(160, 100, 65) : color(110, 70, 45);
-    let faceColor = isHappy ? color(245, 200, 170) : color(210, 170, 140);
+    // Hüpfen!
+    let bounce = isHappy ? sin(timer) * 6 - 4 : sin(timer) * 1.5;
     
+    // Wenn er im Publikum sitzt, dreht er sich automatisch Gesicht-zu-Gesicht zur Manege
+    if (isHappy) {
+        let angleToCenter = atan2(cageY - y, cageX - x);
+        rotate(angleToCenter - HALF_PI); // Ausrichten zur Mitte
+    } else {
+        rotate(sin(timer * 0.5) * 0.05);
+    }
+
+    let bodyColor = isHappy ? color(165, 105, 70) : color(110, 75, 55);
+    let faceColor = isHappy ? color(250, 210, 180) : color(205, 170, 145);
+    
+    // 1. SCHWANZ
     noFill();
     stroke(bodyColor);
-    strokeWeight(3);
-    let tailWiggle = sin(timer) * 5;
-    bezier(0, size/2, -10 + tailWiggle, size/2 + 10, -20, size/2, -18 - tailWiggle, size/4);
+    strokeWeight(2.5);
+    let tailWiggle = sin(timer) * 4;
+    bezier(0, size/2, -8 + tailWiggle, size/2 + 8, -15, size/2, -14 - tailWiggle, size/4);
 
+    // 2. OHREN
     noStroke();
     fill(bodyColor);
-    ellipse(-size/2 - 2, bounce, size * 0.5, size * 0.5); 
-    ellipse(size/2 + 2, bounce, size * 0.5, size * 0.5);  
+    ellipse(-size/2 - 1, bounce, size * 0.45, size * 0.45); 
+    ellipse(size/2 + 1, bounce, size * 0.45, size * 0.45);  
     fill(faceColor);
-    ellipse(-size/2 - 2, bounce, size * 0.25, size * 0.25);
-    ellipse(size/2 + 2, bounce, size * 0.25, size * 0.25);
+    ellipse(-size/2 - 1, bounce, size * 0.2, size * 0.2);
+    ellipse(size/2 + 1, bounce, size * 0.2, size * 0.2);
 
+    // 3. KOPF
     fill(bodyColor);
     ellipse(0, bounce, size, size); 
 
+    // 4. GESICHTSMASKE
     fill(faceColor);
-    ellipse(-size * 0.18, bounce - size * 0.05, size * 0.45, size * 0.45);
-    ellipse(size * 0.18, bounce - size * 0.05, size * 0.45, size * 0.45);
-    ellipse(0, bounce + size * 0.15, size * 0.65, size * 0.5);
+    ellipse(-size * 0.16, bounce - size * 0.05, size * 0.4, size * 0.4);
+    ellipse(size * 0.16, bounce - size * 0.05, size * 0.4, size * 0.4);
+    ellipse(0, bounce + size * 0.15, size * 0.6, size * 0.45);
 
+    // 5. AUGEN
     fill(20);
     if (isHappy) {
         stroke(20);
         strokeWeight(1.5);
         noFill();
-        arc(-size * 0.18, bounce - size * 0.05, 5, 5, PI, TWO_PI);
-        arc(size * 0.18, bounce - size * 0.05, 5, 5, PI, TWO_PI);
+        arc(-size * 0.16, bounce - size * 0.05, 4, 4, PI, TWO_PI);
+        arc(size * 0.16, bounce - size * 0.05, 4, 4, PI, TWO_PI);
     } else {
-        ellipse(-size * 0.18, bounce - size * 0.05, 3.5, 3.5);
-        ellipse(size * 0.18, bounce - size * 0.05, 3.5, 3.5);
+        ellipse(-size * 0.16, bounce - size * 0.05, 3, 3);
+        ellipse(size * 0.16, bounce - size * 0.05, 3, 3);
     }
 
+    // 6. MUND
     noStroke();
     if (isHappy) {
         fill(220, 60, 60);
-        arc(0, bounce + size * 0.12, 10, 10, 0, PI); 
+        arc(0, bounce + size * 0.1, 9, 9, 0, PI); // Breites, lachendes Gesicht!
     } else {
-        stroke(50);
-        strokeWeight(1.5);
-        line(-3, bounce + size * 0.18, 3, bounce + size * 0.18); 
+        stroke(80);
+        strokeWeight(1.2);
+        line(-2.5, bounce + size * 0.16, 2.5, bounce + size * 0.16); 
     }
 
     pop();
@@ -263,9 +262,9 @@ function createConfetti(x, y, count) {
         particles.push({
             x: x,
             y: y,
-            vx: random(-5, 5),
-            vy: random(-6, -1),
-            size: random(4, 9),
+            vx: random(-4, 4),
+            vy: random(-5, -1),
+            size: random(4, 8),
             color: random(colors),
             alpha: 255,
             rot: random(TWO_PI)
@@ -285,14 +284,12 @@ function mousePressed() {
             if (d < m.size) {
                 m.escaped = true;
                 
-                let edx = m.x - cageX;
-                let edy = m.y - cageY;
-                let edist = Math.sqrt(edx*edx + edy*edy);
+                // Weise dem Affen einen festen Platz im Publikumkreis zu (schön aufgereiht)
+                m.audienceAngle = escapedCount * (TWO_PI / totalMonkeys) - HALF_PI;
+                escapedCount++;
                 
-                m.vx = (edx / edist) * 8 + random(-2, 2);
-                m.vy = (edy / edist) * 8 + random(-2, 2);
-                
-                createConfetti(m.x, m.y, 20);
+                // Konfetti genau dort sprühen, wo er stand
+                createConfetti(m.x, m.y, 15);
                 break; 
             }
         }
@@ -302,7 +299,7 @@ function mousePressed() {
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
     cageX = width / 2;
-    cageY = height * 0.58;
+    cageY = height * 0.55;
 }
 </script>
 
