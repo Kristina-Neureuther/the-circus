@@ -9,7 +9,8 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #040814;
+            /* ÄNDERUNG: Heller, warmer Beige-Hintergrund */
+            background-color: #f7f1e3;
             overflow: hidden;
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             user-select: none;
@@ -20,7 +21,8 @@
             top: 5%;
             width: 100%;
             text-align: center;
-            color: #5c697a;
+            /* ÄNDERUNG: Dunklere Schriftfarbe für Lesbarkeit auf Beige */
+            color: #34495e;
             font-size: 0.95rem;
             letter-spacing: 1px;
             line-height: 1.6;
@@ -33,13 +35,15 @@
             font-size: 1.6rem;
             font-weight: 300;
             letter-spacing: 4px;
-            color: #ffffff;
+            /* ÄNDERUNG: Dunkelblaue Titelfarbe */
+            color: #2c3e50;
             text-transform: uppercase;
             margin-bottom: 6px;
         }
 
         .highlight {
-            color: #ffb703;
+            /* ÄNDERUNG: Kontrastreicheres Orange-Gelb */
+            color: #d35400;
             font-weight: bold;
         }
     </style>
@@ -91,9 +95,11 @@ function resetGame() {
 }
 
 function draw() {
-    background(4, 8, 20, 50); 
+    // ÄNDERUNG: p5-Hintergrund auf Beige setzen (mit leichtem Alpha-Effekt für Trails)
+    // RGB von #f7f1e3 ist ca. 247, 241, 227
+    background(247, 241, 227, 50); 
     
-    // 1. MANEGE (Minimalistischer Kreis ohne Dach)
+    // 1. MANEGE (Bleibt dunkel, hebt sich jetzt gut ab)
     fill(12, 18, 35, 150);
     stroke(45, 60, 90, 180); 
     strokeWeight(2);
@@ -150,7 +156,6 @@ function draw() {
             drawMonkey(m.x, m.y, m.size, false, m.bounceTimer);
         } else {
             // BEFREITER AFFE: Steht fest im Publikum außerhalb des Kreises
-            // Er kreist sanft um die Manege und hüpft glücklich auf und ab
             let targetRadius = cageRadius + 45;
             m.x = cageX + cos(m.audienceAngle) * targetRadius;
             m.y = cageY + sin(m.audienceAngle) * targetRadius;
@@ -169,17 +174,22 @@ function draw() {
     // 4. INTERFACE
     if (!gameWon) {
         noFill();
-        stroke(255, 183, 3, 120);
+        // ÄNDERUNG: Cursor-Kreis dunkler
+        stroke(211, 84, 0, 120);
         strokeWeight(1.5);
         ellipse(mouseX, mouseY, 25);
     } else {
         push();
         textAlign(CENTER, CENTER);
-        fill(255, 183, 3);
+        // ÄNDERUNG: Goldener Text für den Sieg
+        fill(211, 84, 0);
         textSize(24);
+        textStyle(BOLD);
         text("ALLE AFFEN SIND FREI! 🎉🐒", width / 2, height * 0.55);
         textSize(14);
-        fill(92, 105, 122);
+        // ÄNDERUNG: Dunkelgrauer Untertitel
+        fill(44, 62, 80);
+        textStyle(NORMAL);
         text("Klicke irgendwo hin, um das Spiel neuzustarten.", width / 2, height * 0.60);
         pop();
     }
@@ -257,7 +267,8 @@ function drawMonkey(x, y, size, isHappy, timer) {
 }
 
 function createConfetti(x, y, count) {
-    let colors = [[255, 183, 3], [0, 245, 255], [255, 50, 100], [100, 255, 100]];
+    // Kontrastreichere Konfetti-Farben für hellen Hintergrund
+    let colors = [[211, 84, 0], [0, 150, 255], [220, 60, 60], [46, 204, 113]];
     for (let i = 0; i < count; i++) {
         particles.push({
             x: x,
