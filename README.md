@@ -2,6 +2,8 @@
 
 An interactive simulation of chaotic nodes escaping a confined system boundary.
 
+## Kristina Neureuther – Systems Thinking & Strategy
+
 ### Live Demo
 [Click here for Live Demo](https://kristina-neureuther.github.io/the-circus/)
 
